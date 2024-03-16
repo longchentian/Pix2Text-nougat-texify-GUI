@@ -8,33 +8,35 @@
 
 [Pix2Text](https://github.com/breezedeus/Pix2Text/tree/main)提供模型Model；
 
-[nougat-latex-ocr](https://github.com/NormXU/nougat-latex-ocr)提供模型Model；
+## 已完成的内容
 
-[texify](https://github.com/VikParuchuri/texify) 提供模型、提供streamlit_app代码。
+- [x] LaTex公式识别的GUI。
+- [x] 支持将LaTex复制为MathML。
+- [x] 支持读取剪切板的图片。
+
+部分UI换成iconfont下载的一些元素。
+
+读懂pyqt的一些代码。基本实现了万能君的软件库的所有功能。
+
+开发过程暂时告一段落。
 
 
 
 ## GUI
 
-### Pix2Text
 
-![image-20240312092614970](./README.assets/image-20240312092614970.png)
 
-### Nougat_Latex
+### 印刷体
 
-![image-20240312101032252](./README.assets/image-20240312101032252.png)
+![FoxitPDFEditor_C6KgrUd8K4](./README.assets/FoxitPDFEditor_C6KgrUd8K4.gif)
 
-### Texify
+### 手写公式
 
-![image-20240312103203354](./README.assets/image-20240312103203354.png)
 
-### streamlit power by Texify
 
-![image-20240312131850345](./README.assets/image-20240312131850345.png)
+![msedge_uSVP2wX9d5](./README.assets/msedge_uSVP2wX9d5.gif)
 
-## 后记
 
-才疏学浅，代码写的很Low,不会Qt,只会简单调用模型。
 
-期待有缘人能结合这个GUI改一下[mygoosh/Mathematical_formula: 基于Pix2Text+PyQT5完成的可视化数学公式识别提取工具，可直接提取为LaxTex、MathML格式，也可仅识别文本内容（准确率低）（Python期末设计/大作业） (github.com)](https://github.com/mygoosh/Mathematical_formula/tree/main)
+
 

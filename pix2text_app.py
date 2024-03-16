@@ -1,7 +1,5 @@
-import torch
+
 import argparse
-
-
 
 
 def parse_option():
@@ -14,10 +12,6 @@ def parse_option():
 
 def main():
     args = parse_option()
-    if torch.cuda.is_available():
-        args.device = 'gpu'
-    else:
-        args.device = 'cpu'
 
     from gui_pix2text import main   
     main(args)

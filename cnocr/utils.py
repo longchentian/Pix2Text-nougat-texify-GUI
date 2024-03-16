@@ -34,7 +34,7 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.nn.utils.rnn import pad_sequence
-from torchvision.utils import save_image
+# from torchvision.utils import save_image
 import torchvision.transforms.functional as F
 
 from .consts import (
@@ -290,7 +290,9 @@ def save_img(img: Union[Tensor, np.ndarray], path):
     img = (img - img.min()) / (img.max() - img.min() + 1e-6)
     # img *= 255
     # img = img.to(dtype=torch.uint8)
-    save_image(img, path)
+    # Os error
+    # 报错Os error
+    # save_image(img, path)
 
     # Image.fromarray(img).save(path)
 

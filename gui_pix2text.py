@@ -9,23 +9,27 @@ from PyQt6.QtCore import Qt, pyqtSlot, pyqtSignal, QThread, QTimer
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QVBoxLayout, QWidget, \
-    QPushButton, QTextEdit, QFormLayout, QHBoxLayout, QDoubleSpinBox
+    QPushButton, QTextEdit, QFormLayout, QHBoxLayout, QDoubleSpinBox,QCheckBox
 from pynput.mouse import Controller
+
+from PyQt6.QtGui import QImage, QPixmap  
+
+from PIL import Image, ImageQt 
 
 from PIL import ImageGrab, Image
 import numpy as np
 from screeninfo import get_monitors
-
+import pyperclip as pp
 
 from pix2text import Pix2Text, merge_line_texts
 
 # 一定要引用的resources，显示icon.
 import resources.resources
-from texify.inference import batch_inference
-from texify.model.model import load_model
-from texify.model.processor import load_processor
+import resources
 
-from nougat import nougat_latex
+import latex2mathml.converter
+
+
 class App(QMainWindow):
     isProcessing = False
 
@@ -34,6 +38,7 @@ class App(QMainWindow):
 
         self.args = args
         self.img = None
+        self.text = None
         self.processor = 1
 
         self.model = Pix2Text(
@@ -50,18 +55,49 @@ class App(QMainWindow):
                 device = 'cpu',
             )
         print("Model load OK!")
+
+
         self.initUI()
         self.snipWidget = SnipWidget(self)
         self.show()
 
-    def initUI(self):
-        self.setWindowTitle("LaTeX OCR")
+        
+        # 初始化剪切板监听  
+        self.clipboard = QApplication.clipboard()
+        # 初始化剪切板监听（默认不开启）  
 
-        QApplication.setWindowIcon(QtGui.QIcon(':/icons/icon.svg'))
+        self.clipboard.dataChanged.connect(self.on_clipboard_data_changed)  
+  
+
+    def on_checkbox_change(self, state):
+
+        if self.checkbox.isChecked():
+            self.clipboard.dataChanged.connect(self.on_clipboard_data_changed)
+        else:
+            self.clipboard.dataChanged.disconnect(self.on_clipboard_data_changed)   
+
+    def on_clipboard_data_changed(self):  
+ 
+        # 检查剪切板中是否有图像数据  
+        clipboard = QApplication.clipboard()  
+        mime_data = clipboard.mimeData()  
+        if mime_data.hasImage():  
+            # 从剪切板获取图像数据  
+            qimage = mime_data.imageData()  
+            img = Image.fromqimage(qimage)
+            # img = ImageQt.fromqimage(qimage)
+            self.img = img
+            self.returnSnip(self.img)
+
+
+    def initUI(self):
+        self.setWindowTitle("LaTeX OCR Power by Pix2Text(Chentian Long)")
+
+        QApplication.setWindowIcon(QtGui.QIcon(':/icons/icons.svg'))
         self.left = 300
         self.top = 300
-        self.width = 500
-        self.height = 300
+        self.width = 550
+        self.height = 350
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         # Create LaTeX display
@@ -83,23 +119,34 @@ class App(QMainWindow):
 
         self.tempField.setRange(0, 1)
         self.tempField.setSingleStep(0.1)
+        self.checkbox = QCheckBox("Enable listening to clipboard | 使能读取剪切板", self)
+        self.checkbox.setChecked(True)  # 设置初始状态为选中  
+        self.checkbox.stateChanged.connect(self.on_checkbox_change)
 
         # Create snip button
         if sys.platform == "darwin":
-            self.snipButton = QPushButton('Snip [Option+S]', self)
+            self.snipButton = QPushButton('Snip [Option+S]|截图', self)
             self.snipButton.clicked.connect(self.onClick)
         else:
-            self.snipButton = QPushButton('Snip [Alt+S]', self)
+            self.snipButton = QPushButton('Snip [Alt+S]|截图', self)
             self.snipButton.clicked.connect(self.onClick)
 
         self.shortcut = QtGui.QShortcut(QtGui.QKeySequence('Alt+S'), self)
         self.shortcut.activated.connect(self.onClick)
 
         # Create retry button
-        self.retryButton = QPushButton('Retry', self)
-        self.retryButton.setEnabled(False)
-        self.retryButton.clicked.connect(self.returnSnip)
+        self.MathMLButton = QPushButton('LaTex2MathML|复制为MathML', self)
+        self.MathMLButton.setEnabled(False)
+        # self.MathMLButton.clicked.connect(self.returnSnip)
+        self.MathMLButton.clicked.connect(self.mathml)
 
+
+        # Create LaTex button
+        self.LaTexButton = QPushButton('LaTex_Copy|复制为LaTex', self)
+        self.LaTexButton.setEnabled(False)
+        self.LaTexButton.clicked.connect(self.latex)
+
+        
         # Create layout
         centralWidget = QWidget()
         centralWidget.setMinimumWidth(200)
@@ -110,11 +157,17 @@ class App(QMainWindow):
         lay.addWidget(self.textbox, stretch=2)
         buttons = QHBoxLayout()
         buttons.addWidget(self.snipButton)
-        buttons.addWidget(self.retryButton)
+        buttons.addWidget(self.LaTexButton)
+        buttons.addWidget(self.MathMLButton)
         lay.addLayout(buttons)
         settings = QFormLayout()
-        settings.addRow('Temperature:', self.tempField)
+        settings.addRow('Temperature[用于特定模型]:', self.tempField)
         lay.addLayout(settings)
+
+        checkbox = QVBoxLayout()
+        checkbox.addWidget(self.checkbox)
+        lay.addLayout(checkbox)
+
 
     def toggleProcessing(self, value=None):
         if value is None:
@@ -122,15 +175,16 @@ class App(QMainWindow):
         else:
             self.isProcessing = value
         if self.isProcessing:
-            text = 'Interrupt'
+            text = 'Interrupt | 打断'
             func = self.interrupt
         else:
             if sys.platform == "darwin":
-                text = 'Snip [Option+S]'
+                text = 'Snip [Option+S]|截图'
             else:
-                text = 'Snip [Alt+S]'
+                text = 'Snip [Alt+S]|截图'
             func = self.onClick
-            self.retryButton.setEnabled(True)
+            self.MathMLButton.setEnabled(True)
+            self.LaTexButton.setEnabled(True)
         self.shortcut.setEnabled(not self.isProcessing)
         self.snipButton.setText(text)
         self.snipButton.clicked.disconnect()
@@ -153,6 +207,15 @@ class App(QMainWindow):
         else:
             self.snipWidget.snip()
 
+    @pyqtSlot()
+    def mathml(self):
+        math = latex2mathml.converter.convert(self.text)
+        pp.copy(math)
+    @pyqtSlot()
+    def latex(self):
+        result = '$' + self.text + '$'
+        pp.copy(result)
+    
     @pyqtSlot()
     def interrupt(self):
         if hasattr(self, 'thread'):
@@ -194,8 +257,8 @@ class App(QMainWindow):
             img = self.img
         # print(type(self.img))  
         self.toggleProcessing(True)
-        self.retryButton.setEnabled(False)
-
+        self.MathMLButton.setEnabled(False)
+        self.LaTexButton.setEnabled(False)
         self.show()
         try:
             self.args.temperature = self.tempField.value()
@@ -212,10 +275,12 @@ class App(QMainWindow):
     def returnPrediction(self, result):
         self.toggleProcessing(False)
         success, prediction = result["success"], result["prediction"]
+        self.text = prediction
 
         if success:
             self.displayPrediction(prediction)
-            self.retryButton.setEnabled(True)
+            self.MathMLButton.setEnabled(True)
+            self.LaTexButton.setEnabled(True)
         else:
             self.webView.setHtml("")
             msg = QMessageBox()
@@ -393,5 +458,6 @@ def main(arguments):
     if os.name != 'nt':
         os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
     app = QApplication(sys.argv)
+
     ex = App(arguments)
     sys.exit(app.exec())
