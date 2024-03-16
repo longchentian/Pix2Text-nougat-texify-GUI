@@ -36,5 +36,10 @@
 
 才疏学浅，代码写的很Low,不会Qt,只会简单调用模型。
 
-期待有缘人能结合这个GUI改一下[mygoosh/Mathematical_formula: 基于Pix2Text+PyQT5完成的可视化数学公式识别提取工具，可直接提取为LaxTex、MathML格式，也可仅识别文本内容（准确率低）（Python期末设计/大作业） (github.com)](https://github.com/mygoosh/Mathematical_formula/tree/main)
+读了下Qt的代码，大概会用Qt了，所以采用做了个改进版本。详见Master分支
+主要添加功能
+- [x] 添加了LaTex转MathML
+- [x] 添加了监听剪切板
+详细见：
+[Pix2Text-GUI](https://github.com/longchentian/Pix2Text-nougat-texify-GUI/tree/Master)
 
