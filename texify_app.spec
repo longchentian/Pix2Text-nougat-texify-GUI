@@ -2,8 +2,8 @@
 
 
 a = Analysis(
-    ['pix2text_app.py'],
-    pathex=['gui_pix2text.py'],
+    ['texify_app.py'],
+    pathex=['gui_texify.py'],
     binaries=[],
     datas=[],
     hiddenimports=[],
@@ -20,7 +20,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='pix2text_app',
+    name='texify_app',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -31,7 +31,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon1.ico'],
+    icon=['icon3.ico'],
 )
 coll = COLLECT(
     exe,
@@ -40,5 +40,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='pix2text_app',
+    name='texify_app',
 )

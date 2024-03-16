@@ -35,20 +35,27 @@ class App(QMainWindow):
         self.args = args
         self.img = None
         self.processor = 1
-
-        self.model = Pix2Text(
-                analyzer_config=dict(  
-                    model_name='mfd',
-                    model_type='yolov7_tiny',  
-                    model_fp='./models/pix2text/mfd/mfd-yolov7_tiny.pt',  
-                ),
-                formula_config = dict(
-                    model_name='mfr', 
-                    model_backend='onnx',
-                    model_dir='./models/pix2text/mfr/',  
-                ),  
-                device = 'cpu',
-            )
+        if self.args.mode==1:
+            self.model = nougat_latex(self.args)
+        elif self.args.mode==2:
+            self.model = load_model()
+            self.processor = load_processor()
+        elif self.args.mode==3:
+            self.model = Pix2Text(
+                    analyzer_config=dict(  
+                        model_name='mfd',
+                        model_type='yolov7_tiny',  
+                        model_fp='./models/pix2text/mfd/mfd-yolov7_tiny.pt',  
+                    ),
+                    formula_config = dict(
+                        model_name='mfr', 
+                        model_backend='onnx',
+                        model_dir='./models/pix2text/mfr/',  
+                    ),  
+                    device = 'cpu',
+                )
+        else:
+            self.model = nougat_latex(self.args)
         print("Model load OK!")
         self.initUI()
         self.snipWidget = SnipWidget(self)
@@ -266,11 +273,29 @@ class ModelThread(QThread):
 
     def run(self):
         try:
-
-            prediction = self.model.recognize_formula(self.img)
-
-            print(prediction)
-            print()
+            if self.mode==1:
+                prediction = self.model.predict(self.img)
+                print(prediction)
+                print()
+            elif self.mode==2:
+                results = batch_inference([self.img], self.model, self.processor,temperature=self.temp)
+                # 将原本输出的\\转换为\
+                results = repr(results).replace("\\\\", "\\")
+                results = results.strip("['$$")
+                prediction = results.strip("$$']")
+                print(prediction)
+                print()
+            elif self.mode==3:
+                prediction = self.model.recognize_formula(self.img)
+                # prediction = merge_line_texts(prediction, auto_line_break=True)
+                # 去掉首尾3个数字
+                # prediction = prediction[3:-3]
+                print(prediction)
+                print()
+            else:
+                prediction = self.model.predict(self.img)
+                print(prediction)
+                print()
 
             self.finished.emit({"success": True, "prediction": prediction})
         except Exception as e:
@@ -388,6 +413,12 @@ class SnipWidget(QMainWindow):
         self.parent.returnSnip(self.parent.img)
 
 def main(arguments):
+    # with in_model_path():
+    #     if os.name != 'nt':
+    #         os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
+    #     app = QApplication(sys.argv)
+    #     ex = App(arguments)
+    #     sys.exit(app.exec())
 
 
     if os.name != 'nt':

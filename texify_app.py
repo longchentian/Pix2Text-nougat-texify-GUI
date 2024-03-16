@@ -2,8 +2,6 @@ import torch
 import argparse
 
 
-
-
 def parse_option():
     parser = argparse.ArgumentParser(prog="nougat inference config", description="model archiver")
     parser.add_argument("--pretrained_model_name_or_path", default="./models/nougat_latex/")
@@ -19,7 +17,7 @@ def main():
     else:
         args.device = 'cpu'
 
-    from gui_pix2text import main   
+    from gui_texify import main   
     main(args)
 
 if __name__ == '__main__':

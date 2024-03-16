@@ -24,6 +24,7 @@ import resources.resources
 from texify.inference import batch_inference
 from texify.model.model import load_model
 from texify.model.processor import load_processor
+from texify.output import replace_katex_invalid
 
 from nougat import nougat_latex
 class App(QMainWindow):
@@ -34,21 +35,10 @@ class App(QMainWindow):
 
         self.args = args
         self.img = None
-        self.processor = 1
 
-        self.model = Pix2Text(
-                analyzer_config=dict(  
-                    model_name='mfd',
-                    model_type='yolov7_tiny',  
-                    model_fp='./models/pix2text/mfd/mfd-yolov7_tiny.pt',  
-                ),
-                formula_config = dict(
-                    model_name='mfr', 
-                    model_backend='onnx',
-                    model_dir='./models/pix2text/mfr/',  
-                ),  
-                device = 'cpu',
-            )
+        self.model = load_model()
+        self.processor = load_processor()
+ 
         print("Model load OK!")
         self.initUI()
         self.snipWidget = SnipWidget(self)
@@ -266,12 +256,15 @@ class ModelThread(QThread):
 
     def run(self):
         try:
+            results = batch_inference([self.img], self.model, self.processor,temperature=self.temp)
+            # 将原本输出的\\转换为\
+            results = repr(results).replace("\\\\", "\\")
+            results = results.strip("['$$")
+            prediction = results.strip("$$']")
 
-            prediction = self.model.recognize_formula(self.img)
-
+            # prediction = replace_katex_invalid(results)
             print(prediction)
             print()
-
             self.finished.emit({"success": True, "prediction": prediction})
         except Exception as e:
             import traceback
@@ -388,6 +381,12 @@ class SnipWidget(QMainWindow):
         self.parent.returnSnip(self.parent.img)
 
 def main(arguments):
+    # with in_model_path():
+    #     if os.name != 'nt':
+    #         os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
+    #     app = QApplication(sys.argv)
+    #     ex = App(arguments)
+    #     sys.exit(app.exec())
 
 
     if os.name != 'nt':

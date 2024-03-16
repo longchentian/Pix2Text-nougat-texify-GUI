@@ -19,7 +19,7 @@ def main():
     else:
         args.device = 'cpu'
 
-    from gui_pix2text import main   
+    from gui_nougat import main   
     main(args)
 
 if __name__ == '__main__':

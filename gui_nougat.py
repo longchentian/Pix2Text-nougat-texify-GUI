@@ -36,19 +36,8 @@ class App(QMainWindow):
         self.img = None
         self.processor = 1
 
-        self.model = Pix2Text(
-                analyzer_config=dict(  
-                    model_name='mfd',
-                    model_type='yolov7_tiny',  
-                    model_fp='./models/pix2text/mfd/mfd-yolov7_tiny.pt',  
-                ),
-                formula_config = dict(
-                    model_name='mfr', 
-                    model_backend='onnx',
-                    model_dir='./models/pix2text/mfr/',  
-                ),  
-                device = 'cpu',
-            )
+        self.model = nougat_latex(self.args)
+
         print("Model load OK!")
         self.initUI()
         self.snipWidget = SnipWidget(self)
@@ -267,8 +256,7 @@ class ModelThread(QThread):
     def run(self):
         try:
 
-            prediction = self.model.recognize_formula(self.img)
-
+            prediction = self.model.predict(self.img)
             print(prediction)
             print()
 
@@ -388,6 +376,12 @@ class SnipWidget(QMainWindow):
         self.parent.returnSnip(self.parent.img)
 
 def main(arguments):
+    # with in_model_path():
+    #     if os.name != 'nt':
+    #         os.environ['QTWEBENGINE_DISABLE_SANDBOX'] = '1'
+    #     app = QApplication(sys.argv)
+    #     ex = App(arguments)
+    #     sys.exit(app.exec())
 
 
     if os.name != 'nt':

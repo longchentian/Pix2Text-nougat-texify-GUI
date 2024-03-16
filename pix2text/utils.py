@@ -16,7 +16,7 @@ import numpy as np
 from numpy import random
 import torch
 from torch import Tensor
-# from torchvision.utils import save_image
+from torchvision.utils import save_image
 
 
 fmt = '[%(levelname)s %(asctime)s %(funcName)s:%(lineno)d] %(' 'message)s '
@@ -161,8 +161,7 @@ def save_img(img: Union[Tensor, np.ndarray], path):
     img = (img - img.min()) / (img.max() - img.min() + 1e-6)
     # img *= 255
     # img = img.to(dtype=torch.uint8)
-    # 老是报错 那就不用了
-    # save_image(img, path)
+    save_image(img, path)
 
     # Image.fromarray(img).save(path)
 
